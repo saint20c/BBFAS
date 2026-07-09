@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BBFAS 과정별 커리큘럼 대시보드</title>
+<style>
+  :root { color-scheme: light; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    background: #F7F7F8;
+    color: #1C1C1E;
+    min-height: 100vh;
+    padding: 0;
+  }
+  .header {
+    background: #fff;
+    border-bottom: 1px solid #E5E5EA;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo-wrap { display: flex; align-items: center; gap: 10px; }
+  .logo-dot {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: #fff;
+    transition: background .2s;
+  }
+  .logo-name { font-size: 14px; font-weight: 600; color: #1C1C1E; }
+  .logo-sub { font-size: 11px; color: #8E8E93; margin-top: 1px; }
+  .switcher { display: flex; gap: 6px; }
+  .sw-btn {
+    padding: 7px 18px; border-radius: 20px;
+    border: 1px solid #E5E5EA;
+    background: #F7F7F8;
+    font-family: inherit;
+    font-size: 12px; font-weight: 500;
+    cursor: pointer; color: #636366;
+    transition: all .15s;
+  }
+  .sw-btn:hover { background: #EBEBEB; }
+  .sw-btn.active-basic { background: #1D9E75; border-color: #1D9E75; color: #fff; }
+  .sw-btn.active-master { background: #534AB7; border-color: #534AB7; color: #fff; }
+
+  .main { max-width: 780px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  .stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 8px; margin-bottom: 20px;
+  }
+  .stat-card {
+    background: #fff; border-radius: 10px;
+    padding: 12px 10px; text-align: center;
+    border: 1px solid #E5E5EA;
+  }
+  .stat-n { font-size: 22px; font-weight: 600; }
+  .stat-l { font-size: 10px; color: #8E8E93; margin-top: 3px; }
+
+  .course-section { display: none; }
+  .course-section.active { display: block; }
+
+  .part-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; padding: 5px 12px;
+    border-radius: 10px; display: inline-flex;
+    align-items: center; gap: 5px;
+    margin: 0 0 10px;
+  }
+  .pl-basic { background: #E1F5EE; color: #085041; }
+  .pl-main  { background: #EEEDFE; color: #3C3489; }
+  .pl-sub   { background: #F0F0F0; color: #3C3C43; }
+  .pl-biz   { background: #FFF3E0; color: #5D3608; }
+
+  .session-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 24px; }
+
+  .sess {
+    background: #fff; border: 1px solid #E5E5EA;
+    border-radius: 10px; overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow .15s;
+  }
+  .sess:hover { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+
+  .sess-head {
+    display: flex; align-items: center;
+    gap: 10px; padding: 11px 14px;
+    user-select: none;
+  }
+  .s-num { font-size: 10px; font-weight: 500; color: #8E8E93; min-width: 24px; }
+  .s-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .s-title { font-size: 13px; font-weight: 500; color: #1C1C1E; flex: 1; line-height: 1.45; }
+  .s-badge {
+    font-size: 10px; padding: 2px 8px;
+    border-radius: 8px; white-space: nowrap; flex-shrink: 0;
+  }
+  .sb-basic { background: #E1F5EE; color: #085041; }
+  .sb-core  { background: #EEEDFE; color: #3C3489; }
+  .sb-new   { background: #E8F4FD; color: #0C447C; }
+  .sb-sup   { background: #F0F0F0; color: #3C3C43; }
+  .sb-biz   { background: #FFF3E0; color: #5D3608; }
+
+  .s-arrow { font-size: 14px; color: #C7C7CC; transition: transform .2s; flex-shrink: 0; }
+  .sess.open .s-arrow { transform: rotate(180deg); }
+
+  .sess-body {
+    display: none;
+    padding: 0 14px 14px 46px;
+    border-top: 1px solid #F2F2F7;
+  }
+  .sess.open .sess-body { display: block; }
+
+  .sb-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-top: 10px;
+  }
+  .sb-col {
+    background: #F7F7F8; border-radius: 8px;
+    padding: 9px 11px; border: 1px solid #EBEBEB;
+  }
+  .sb-col-title {
+    font-size: 9px; font-weight: 600; color: #8E8E93;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .sb-col-item {
+    font-size: 11px; color: #3C3C43;
+    line-height: 1.7;
+  }
+  .sb-col-item::before { content: "· "; color: #C7C7CC; }
+  .sb-note {
+    font-size: 11px; color: #3C3C43; line-height: 1.65;
+    margin-top: 9px; padding: 8px 11px;
+    background: #F7F7F8; border-radius: 7px;
+    border-left: 3px solid #AFA9EC;
+  }
+  .sb-note-g { border-left-color: #5DCAA5; }
+  .sb-note-a { border-left-color: #EF9F27; }
+
+  /* Tabler-icon fallback via unicode arrows */
+  .ti-chevron-down::after { content: "▾"; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-wrap">
+    <div class="logo-dot" id="logoDot" style="background:#1D9E75">★</div>
+    <div>
+      <div class="logo-name">BBFAS — PAK-DI COLOR LAB</div>
+      <div class="logo-sub" id="logoSub">전문가과정 · 골격진단 전문가 · 등록민간자격</div>
+    </div>
+  </div>
+  <div class="switcher">
+    <button class="sw-btn active-basic" id="btn1" onclick="switchCourse('basic')">전문가과정 L1</button>
+    <button class="sw-btn" id="btn2" onclick="switchCourse('master')">마스터과정 L2</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ══════ 전문가과정 ══════ -->
+  <div class="course-section active" id="sec-basic">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-n" style="color:#1D9E75">7</div><div class="stat-l">챕터</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#1D9E75">3</div><div class="stat-l">골격 유형</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#1D9E75">4</div><div class="stat-l">핵심 관찰 부위</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#1D9E75">등록</div><div class="stat-l">민간자격</div></div>
+    </div>
+
+    <div class="session-list">
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">Ch1</span><span class="s-dot" style="background:#1D9E75"></span>
+          <span class="s-title">골격진단의 이해</span>
+          <span class="s-badge sb-basic">이론</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">핵심 내용</div>
+              <div class="sb-col-item">골격진단이란?</div>
+              <div class="sb-col-item">골격진단의 정의</div>
+              <div class="sb-col-item">골격진단의 발전</div>
+              <div class="sb-col-item">차별화 포인트 & 장점</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">학습 목표</div>
+              <div class="sb-col-item">골격진단 개념 이해</div>
+              <div class="sb-col-item">타 체형 분석과의 차이 설명</div>
+              <div class="sb-col-item">골격진단 장점 5가지 숙지</div>
+            </div>
+          </div>
+          <div class="sb-note sb-note-g">뼈 구조·근육 발달·지방 분포·피부 질감·신체 입체감을 종합 분석 → 타고난 구조 기반이므로 체중·나이에 관계없이 적용 가능</div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">Ch2</span><span class="s-dot" style="background:#1D9E75"></span>
+          <span class="s-title">골격 유형의 이해 — 스트레이트 · 웨이브 · 내추럴</span>
+          <span class="s-badge sb-basic">핵심</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">스트레이트</div>
+              <div class="sb-col-item">골격 탄탄, 근육 발달</div>
+              <div class="sb-col-item">상체 입체감·무게중심 위</div>
+              <div class="sb-col-item">체중 → 상체·복부 증가</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">웨이브</div>
+              <div class="sb-col-item">골격 가늘고 곡선적</div>
+              <div class="sb-col-item">피부 부드러움·무게중심 아래</div>
+              <div class="sb-col-item">체중 → 하체 증가</div>
+            </div>
+          </div>
+          <div class="sb-row" style="margin-top:6px">
+            <div class="sb-col"><div class="sb-col-title">내추럴</div>
+              <div class="sb-col-item">뼈 존재감 강·관절 도드라짐</div>
+              <div class="sb-col-item">피부 질감 두꺼움</div>
+              <div class="sb-col-item">체중 → 전체적으로 증가</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">진단 주의점</div>
+              <div class="sb-col-item">한 가지 특징만으로 판단 금지</div>
+              <div class="sb-col-item">두 유형 특성 동시 출현 가능</div>
+              <div class="sb-col-item">종합적 분석 필수</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">Ch3</span><span class="s-dot" style="background:#1D9E75"></span>
+          <span class="s-title">골격진단 방법 — 5단계 진단 프로세스</span>
+          <span class="s-badge sb-basic">실습</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">5단계 순서</div>
+              <div class="sb-col-item">① 구두 질문 (고객 정보 파악)</div>
+              <div class="sb-col-item">② 수치 측정 (신체 특징 분석)</div>
+              <div class="sb-col-item">③ 눈 관찰 (형태 분석)</div>
+              <div class="sb-col-item">④ 바디 터치 (질감·구조 확인)</div>
+              <div class="sb-col-item">⑤ 스타일 제안</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">바디터치 순서</div>
+              <div class="sb-col-item">얼굴→손→목→쇄골→어깨</div>
+              <div class="sb-col-item">→팔→등→엉덩이→가슴</div>
+              <div class="sb-col-item">→허리→골반→허벅지→종아리</div>
+              <div class="sb-col-item">터치 전 반드시 설명</div>
+            </div>
+          </div>
+          <div class="sb-note sb-note-g">체형 분석 기준표 : 기본 체형(Base shape)은 어깨와 골반 비율로 결정 / 허리 라인은 실루엣 보정 요소</div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">Ch4</span><span class="s-dot" style="background:#1D9E75"></span>
+          <span class="s-title">골격진단 관찰 포인트 — 쇄골 · 어깨 · 손목 · 무릎</span>
+          <span class="s-badge sb-basic">핵심</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">쇄골</div>
+              <div class="sb-col-item">스트레이트 : 짧고 두꺼움</div>
+              <div class="sb-col-item">웨이브 : 얇고 선명하게 드러남</div>
+              <div class="sb-col-item">내추럴 : 길고 뼈 존재감 강함</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">어깨</div>
+              <div class="sb-col-item">스트레이트 : 적당히 넓고 직선</div>
+              <div class="sb-col-item">웨이브 : 좁고 둥글게 떨어짐</div>
+              <div class="sb-col-item">내추럴 : 넓고 어깨뼈 드러남</div>
+            </div>
+          </div>
+          <div class="sb-row" style="margin-top:6px">
+            <div class="sb-col"><div class="sb-col-title">손목</div>
+              <div class="sb-col-item">스트레이트 : 두께감·둥글고 단단</div>
+              <div class="sb-col-item">웨이브 : 가늘고 얇음</div>
+              <div class="sb-col-item">내추럴 : 뼈 크고 관절 도드라짐</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">무릎</div>
+              <div class="sb-col-item">스트레이트 : 둥글고 안정적</div>
+              <div class="sb-col-item">웨이브 : 작고 부드러움</div>
+              <div class="sb-col-item">내추럴 : 관절 크고 뼈 도드라짐</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">Ch5</span><span class="s-dot" style="background:#1D9E75"></span>
+          <span class="s-title">스타일링 이론 — 소재 · 실루엣 · 소매 · 네크라인 · 하의 · 가방</span>
+          <span class="s-badge sb-basic">스타일링</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">소재</div>
+              <div class="sb-col-item">스트레이트 : 옥스포드·트위드·벨벳</div>
+              <div class="sb-col-item">웨이브 : 쉬폰·실크·앙고라</div>
+              <div class="sb-col-item">내추럴 : 리넨·코듀로이·스웨이드</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">실루엣</div>
+              <div class="sb-col-item">스트레이트 : H라인·테일러드</div>
+              <div class="sb-col-item">웨이브 : 플레어·머메이드</div>
+              <div class="sb-col-item">내추럴 : 오버핏·와이드·박시</div>
+            </div>
+          </div>
+          <div class="sb-row" style="margin-top:6px">
+            <div class="sb-col"><div class="sb-col-title">소매 (6종)</div>
+              <div class="sb-col-item">캡·프렌치·퍼프·페탈·아메리칸·돌먼</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">네크라인 (5종)</div>
+              <div class="sb-col-item">브이·라운드·스퀘어·보트·하트</div>
+            </div>
+          </div>
+          <div class="sb-row" style="margin-top:6px">
+            <div class="sb-col"><div class="sb-col-title">하의 팬츠 (5종)</div>
+              <div class="sb-col-item">스트레이트·스키니·부츠컷·플레어·와이드</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">하의 스커트 (4종)</div>
+              <div class="sb-col-item">H라인·A라인·플레어·맥시</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">Ch6</span><span class="s-dot" style="background:#1D9E75"></span>
+          <span class="s-title">골격진단 체크리스트</span>
+          <span class="s-badge sb-basic">도구</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">체크 항목</div>
+              <div class="sb-col-item">쇄골 : 잘드러남 / 보통 / 두꺼움</div>
+              <div class="sb-col-item">어깨 : 좁음 / 보통 / 넓음</div>
+              <div class="sb-col-item">손목 : 얇음 / 보통 / 두꺼움</div>
+              <div class="sb-col-item">무릎 : 작음 / 보통 / 큼</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">추가 항목</div>
+              <div class="sb-col-item">가슴 위치 : 높음 / 보통 / 낮음</div>
+              <div class="sb-col-item">엉덩이 위치 : 높음 / 보통 / 낮음</div>
+              <div class="sb-col-item">골격 유형 최종 판정 □</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">Ch7</span><span class="s-dot" style="background:#1D9E75"></span>
+          <span class="s-title">골격진단 실습지 — 진단 & 스타일 제안 실습</span>
+          <span class="s-badge sb-basic">실습</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">실습지 구성</div>
+              <div class="sb-col-item">핵심 관찰 기록</div>
+              <div class="sb-col-item">골격 유형 판정</div>
+              <div class="sb-col-item">스타일 제안 (소재·실루엣·하의·가방)</div>
+              <div class="sb-col-item">상담 메모</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">검정 시험 연계</div>
+              <div class="sb-col-item">등록민간자격 실기 기반</div>
+              <div class="sb-col-item">실습지 완성 = 검정 준비</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /session-list -->
+  </div><!-- /전문가과정 -->
+
+
+  <!-- ══════ 마스터과정 ══════ -->
+  <div class="course-section" id="sec-master">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-n" style="color:#534AB7">20</div><div class="stat-l">차시</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#534AB7">6</div><div class="stat-l">확장 유형</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#534AB7">100</div><div class="stat-l">사례 분석</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#534AB7">BBFAS</div><div class="stat-l">공인 심화</div></div>
+    </div>
+
+    <!-- PART 1 -->
+    <div class="part-label pl-main">● PART 1 · 진단 심화 이론 (메인) — 차시 1~10</div>
+    <div class="session-list">
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">01</span><span class="s-dot" style="background:#534AB7"></span>
+          <span class="s-title">BBFAS 6유형 체계 수립</span>
+          <span class="s-badge sb-core">핵심 이론</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">2축 교차 분류</div>
+              <div class="sb-col-item">1축 : 골격 재질 (기존 3유형)</div>
+              <div class="sb-col-item">2축 : 비례 분포 우세 부위</div>
+              <div class="sb-col-item">교차 → 6유형 도출</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">6유형 명칭</div>
+              <div class="sb-col-item">S-Ⅰ 선형 직선 / S-Ⅱ 균형 직선</div>
+              <div class="sb-col-item">W-U 상체 웨이브 / W-L 하체 웨이브</div>
+              <div class="sb-col-item">N-S 어깨주도 / N-H 골반주도</div>
+            </div>
+          </div>
+          <div class="sb-note">3유형 판별(What) → 6유형 설계(How)로 전환. 일본식 3유형의 설명력 한계를 한국인 체형 데이터 기반으로 극복</div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">02</span><span class="s-dot" style="background:#534AB7"></span>
+          <span class="s-title">골격 우선순위 분석법</span>
+          <span class="s-badge sb-core">핵심 이론</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">분석 기준</div>
+              <div class="sb-col-item">부위별 골격 특성 충돌 시 처리법</div>
+              <div class="sb-col-item">상체 우세 vs 하체 우세 판별</div>
+              <div class="sb-col-item">골밀도·관절감 우선 순위</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">적용 시나리오</div>
+              <div class="sb-col-item">쇄골=웨이브, 손목=내추럴일 때</div>
+              <div class="sb-col-item">어깨=스트레이트, 무릎=웨이브일 때</div>
+              <div class="sb-col-item">→ 의사결정 프로세스 체계화</div>
+            </div>
+          </div>
+          <div class="sb-note">기본과정에는 없는 내용. '종합적으로 판단'이라는 말을 구체적인 의사결정 프로세스로 체계화</div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">03</span><span class="s-dot" style="background:#534AB7"></span>
+          <span class="s-title">복합형 · 경계형 판정 프로토콜</span>
+          <span class="s-badge sb-core">핵심 이론</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">5변수 매트릭스</div>
+              <div class="sb-col-item">① 골밀도·뼈 프레임</div>
+              <div class="sb-col-item">② 상하체 비율 우세</div>
+              <div class="sb-col-item">③ 직업·드레스코드</div>
+              <div class="sb-col-item">④ 연령·체중 단계</div>
+              <div class="sb-col-item">⑤ 클라이언트 목표</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">판정 기준</div>
+              <div class="sb-col-item">70% 이상 → 단일 유형</div>
+              <div class="sb-col-item">50:50 → 복합형 기록</div>
+              <div class="sb-col-item">주 유형 + 보조 유형으로 표기</div>
+              <div class="sb-col-item">실습 케이스 5개</div>
+            </div>
+          </div>
+          <div class="sb-note">기본과정은 "두 특징이 함께 나타날 수 있다" 한 줄. 심화에서는 실제 케이스 5개로 판정 실습</div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">04</span><span class="s-dot" style="background:#534AB7"></span>
+          <span class="s-title">얼굴형 + 골격 통합 분석</span>
+          <span class="s-badge sb-new">BBFAS 독창</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">통합 분석 원리</div>
+              <div class="sb-col-item">얼굴형 : 라운드·타원·각진·하트·역삼각</div>
+              <div class="sb-col-item">골격 유형과 얼굴형의 조화 매핑</div>
+              <div class="sb-col-item">충돌 시 우선 적용 기준</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">실전 적용</div>
+              <div class="sb-col-item">네크라인 : 얼굴형 vs 골격</div>
+              <div class="sb-col-item">헤어 : 얼굴형 vs 골격</div>
+              <div class="sb-col-item">액세서리 : 통합 기준 적용</div>
+            </div>
+          </div>
+          <div class="sb-note">기본과정·일본 골격진단 모두 미포함 영역. BBFAS만의 독창 이론으로 퍼스널컬러 연동 컨설팅으로 확장 가능</div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">05</span><span class="s-dot" style="background:#534AB7"></span>
+          <span class="s-title">움직임으로 보는 골격 — Dynamic Frame Analysis (DFA)</span>
+          <span class="s-badge sb-new">BBFAS 독창</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">정적 진단의 한계</div>
+              <div class="sb-col-item">사진·정지 자세는 실제 골격과 다를 수 있음</div>
+              <div class="sb-col-item">자세 보정·의상으로 가려지는 특성</div>
+              <div class="sb-col-item">긴장 시 근육이 골격을 덮음</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">DFA 3분 프로토콜</div>
+              <div class="sb-col-item">걸음걸이 관찰 (어깨·골반 이동)</div>
+              <div class="sb-col-item">앉은 자세 (등·허리·골반)</div>
+              <div class="sb-col-item">팔 동작 (팔꿈치·손목 관절감)</div>
+            </div>
+          </div>
+          <div class="sb-note">움직이는 몸에서 드러나는 진짜 골격 특성. 온라인 진단·영상 진단에서도 핵심 기법으로 활용</div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">06</span><span class="s-dot" style="background:#534AB7"></span>
+          <span class="s-title">연령에 따른 골격 변화</span>
+          <span class="s-badge sb-core">핵심 이론</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">변화 지점</div>
+              <div class="sb-col-item">20대 : 골격 특성 가장 선명</div>
+              <div class="sb-col-item">40대 : 상체 볼륨·목 라인 변화</div>
+              <div class="sb-col-item">60대 : 골반 벌어짐·어깨 좁아짐</div>
+              <div class="sb-col-item">폐경 후 : 복부·허리 지방 패턴 변화</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">진단 조정</div>
+              <div class="sb-col-item">유형 자체는 변하지 않음</div>
+              <div class="sb-col-item">근육·피부 변화에 맞는 소재 재선택</div>
+              <div class="sb-col-item">실루엣 여유량 조정</div>
+              <div class="sb-col-item">장식 크기 재설정</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">07</span><span class="s-dot" style="background:#534AB7"></span>
+          <span class="s-title">체중 변화와 골격 인식</span>
+          <span class="s-badge sb-core">핵심 이론</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">핵심 원칙</div>
+              <div class="sb-col-item">체중 ≠ 골격 유형 (별개 변수)</div>
+              <div class="sb-col-item">"살 빠지면 유형이 바뀐다?" → No</div>
+              <div class="sb-col-item">달라지는 것 : 스타일링 여유량</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">특수 상황</div>
+              <div class="sb-col-item">다이어트 중 : 과도기 스타일링</div>
+              <div class="sb-col-item">임신·출산 후 : 골반·복부 대응</div>
+              <div class="sb-col-item">수술·재활 : 기능+스타일 통합</div>
+            </div>
+          </div>
+          <div class="sb-note">"살 빠지고 다시 올게요" 클라이언트 대응 스크립트 + 지금 바로 구매 가능한 아이템 제안법</div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">08</span><span class="s-dot" style="background:#534AB7"></span>
+          <span class="s-title">남녀 골격의 차이와 통합 진단</span>
+          <span class="s-badge sb-core">핵심 이론</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">남성 기준점 차이</div>
+              <div class="sb-col-item">어깨너비 : 절대적 기준 (여성보다 중요)</div>
+              <div class="sb-col-item">흉곽 두께·깊이 : 스트레이트 핵심</div>
+              <div class="sb-col-item">허리·골반 : 어깨보다 좁은 게 일반</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">남성 스타일링</div>
+              <div class="sb-col-item">스트레이트 : 슬림핏 수트·테일러드</div>
+              <div class="sb-col-item">웨이브 : 어깨 패드 수트</div>
+              <div class="sb-col-item">내추럴 : 오버핏 코트·루즈 셔츠</div>
+            </div>
+          </div>
+          <div class="sb-note">남성 클라이언트 언어 : 감성 표현 지양 → "어깨 라인이 정확히 맞아 체형이 단정해 보입니다" 기능·효과 중심</div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">09</span><span class="s-dot" style="background:#534AB7"></span>
+          <span class="s-title">실제 사례 100명 분석 — BBFAS Case DB</span>
+          <span class="s-badge sb-new">BBFAS 독창</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">분석 내용</div>
+              <div class="sb-col-item">6유형별 실제 분포 비율</div>
+              <div class="sb-col-item">복합형 발생 빈도 및 패턴</div>
+              <div class="sb-col-item">연령대별 진단 오류 분포</div>
+              <div class="sb-col-item">가장 자주 틀리는 감별 케이스</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">학습 방식</div>
+              <div class="sb-col-item">블라인드 진단 → 정답 공개</div>
+              <div class="sb-col-item">수강생별 오류 패턴 유형화</div>
+              <div class="sb-col-item">케이스 발표 + 토론</div>
+              <div class="sb-col-item">개인 오류 교정 계획 작성</div>
+            </div>
+          </div>
+          <div class="sb-note">한국인 체형 데이터 기반의 실제 사례 누적 → BBFAS 이론 고도화의 토대. 수강생 케이스가 DB에 추가되는 선순환 설계</div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">10</span><span class="s-dot" style="background:#534AB7"></span>
+          <span class="s-title">새로운 체크리스트 개발 — BBFAS Advanced Checklist</span>
+          <span class="s-badge sb-new">BBFAS 독창</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">기본 체크리스트 한계</div>
+              <div class="sb-col-item">4개 부위(쇄골·어깨·손목·무릎)만</div>
+              <div class="sb-col-item">□ 체크만 → 판단 근거 없음</div>
+              <div class="sb-col-item">복합형·연령·체중 변수 없음</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">심화 체크리스트 설계</div>
+              <div class="sb-col-item">부위 확장 (등·복부·발목 추가)</div>
+              <div class="sb-col-item">동적 관찰 항목 포함</div>
+              <div class="sb-col-item">복합형 판정 섹션 포함</div>
+              <div class="sb-col-item">수강생이 직접 설계 실습</div>
+            </div>
+          </div>
+          <div class="sb-note">이 차시의 산출물이 곧 심화과정의 고유 진단 도구. 수강생이 직접 만들어 실전에서 사용</div>
+        </div>
+      </div>
+
+    </div><!-- /part1 -->
+
+    <!-- PART 2 -->
+    <div class="part-label pl-sub">● PART 2 · 심화 스타일링 (보조) — 차시 11~14</div>
+    <div class="session-list">
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">11</span><span class="s-dot" style="background:#1D9E75"></span>
+          <span class="s-title">아우터 & 신발 — 6유형 기준 적용</span>
+          <span class="s-badge sb-sup">보조</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">아우터 핵심 변수</div>
+              <div class="sb-col-item">어깨 라인 / 허리 절개 유무</div>
+              <div class="sb-col-item">기장 / 소재 두께감</div>
+              <div class="sb-col-item">6유형별 최적 구조 매핑</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">신발 핵심 변수</div>
+              <div class="sb-col-item">굽 높이 / 토박스 형태</div>
+              <div class="sb-col-item">스트랩 위치 / 소재</div>
+              <div class="sb-col-item">부츠 : 샤프트 높이 × 유형</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">12</span><span class="s-dot" style="background:#1D9E75"></span>
+          <span class="s-title">액세서리 완전 정복 — 주얼리 · 벨트 · 스카프 · 패턴 · 레이어링</span>
+          <span class="s-badge sb-sup">보조</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">주얼리</div>
+              <div class="sb-col-item">목걸이 : 체인 굵기·길이·펜던트</div>
+              <div class="sb-col-item">귀걸이 : 얼굴형+골격 교차 적용</div>
+              <div class="sb-col-item">벨트 : 너비 × 골격 허리 전략</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">패턴·레이어링</div>
+              <div class="sb-col-item">스트라이프 방향 × 유형</div>
+              <div class="sb-col-item">레이어링 3원칙</div>
+              <div class="sb-col-item">투킹 in/out 효과</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">13</span><span class="s-dot" style="background:#1D9E75"></span>
+          <span class="s-title">얼굴형 연동 스타일링 — 통합 분석 실전 적용</span>
+          <span class="s-badge sb-sup">보조</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">통합 적용</div>
+              <div class="sb-col-item">네크라인 : 얼굴형 우선 vs 골격 우선</div>
+              <div class="sb-col-item">귀걸이 : 얼굴형+골격 동시 고려</div>
+              <div class="sb-col-item">헤어 : 얼굴형+골격 조화 기준</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">충돌 케이스 실습</div>
+              <div class="sb-col-item">V넥 권장 얼굴형 + 라운드넥 권장 골격</div>
+              <div class="sb-col-item">→ 어느 것이 우선인가</div>
+              <div class="sb-col-item">5개 케이스 판단 실습</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">14</span><span class="s-dot" style="background:#1D9E75"></span>
+          <span class="s-title">헤어 · TPO · 시즌 통합 — 진단 결과를 일상에 연결</span>
+          <span class="s-badge sb-sup">보조</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">헤어</div>
+              <div class="sb-col-item">길이 × 유형 / 앞머리 유무</div>
+              <div class="sb-col-item">볼륨 방향과 골격 인상</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">TPO·시즌</div>
+              <div class="sb-col-item">비즈니스·세미포멀·캐주얼·파티</div>
+              <div class="sb-col-item">시즌별 소재 전환 전략</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /part2 -->
+
+    <!-- PART 3 -->
+    <div class="part-label pl-biz">● PART 3 · 컨설팅 실무 & 강사 기초 — 차시 15~20</div>
+    <div class="session-list">
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">15</span><span class="s-dot" style="background:#BA7517"></span>
+          <span class="s-title">심화 진단 보고서 작성</span>
+          <span class="s-badge sb-biz">실무</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">7섹션 구성</div>
+              <div class="sb-col-item">① 클라이언트 프로파일</div>
+              <div class="sb-col-item">② BBFAS 진단 결과</div>
+              <div class="sb-col-item">③ 신체 특성 자산 목록</div>
+              <div class="sb-col-item">④ 통합 스타일링 가이드</div>
+              <div class="sb-col-item">⑤ 피해야 할 스타일</div>
+              <div class="sb-col-item">⑥ 즉시 구매 리스트</div>
+              <div class="sb-col-item">⑦ 다음 단계 제안</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">도구</div>
+              <div class="sb-col-item">Canva 비주얼 보고서</div>
+              <div class="sb-col-item">Notion 대화형 보고서</div>
+              <div class="sb-col-item">10차시 심화 체크리스트 기반</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">16</span><span class="s-dot" style="background:#BA7517"></span>
+          <span class="s-title">케이스 스튜디오 1 — 블라인드 진단 실습</span>
+          <span class="s-badge sb-biz">실습</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">3단계 진행</div>
+              <div class="sb-col-item">① 블라인드 분석 15분 (사진·영상)</div>
+              <div class="sb-col-item">② 정보 개방 후 재설계 20분</div>
+              <div class="sb-col-item">③ 전문가 해설·토론 25분</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">학습 포인트</div>
+              <div class="sb-col-item">수강생별 진단 결과 비교</div>
+              <div class="sb-col-item">같은 사진에서 다른 결론 원인 분석</div>
+              <div class="sb-col-item">오류 패턴 유형화</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">17</span><span class="s-dot" style="background:#BA7517"></span>
+          <span class="s-title">케이스 스튜디오 2 — 수강생 실제 클라이언트 발표</span>
+          <span class="s-badge sb-biz">실습</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">발표 내용</div>
+              <div class="sb-col-item">실제 클라이언트 1인 케이스</div>
+              <div class="sb-col-item">진단 과정·보고서·피드백</div>
+              <div class="sb-col-item">1인당 10분 발표</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">동료 피드백</div>
+              <div class="sb-col-item">진단 정확도·보고서 완성도</div>
+              <div class="sb-col-item">커뮤니케이션 방식</div>
+              <div class="sb-col-item">5점 척도 상호 평가</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">18</span><span class="s-dot" style="background:#BA7517"></span>
+          <span class="s-title">쇼핑 동행 & 옷장 진단</span>
+          <span class="s-badge sb-biz">실무</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">쇼핑 동행</div>
+              <div class="sb-col-item">사전 준비·현장·사후 3단계</div>
+              <div class="sb-col-item">피팅룸 5초 체크법</div>
+              <div class="sb-col-item">요금 : 30~60만원 범위</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">옷장 진단</div>
+              <div class="sb-col-item">버릴 것·살릴 것·사야 할 것</div>
+              <div class="sb-col-item">역진단 (아이템→골격 추론)</div>
+              <div class="sb-col-item">코디 조합 제안</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">19</span><span class="s-dot" style="background:#BA7517"></span>
+          <span class="s-title">강사 기초 & 비즈니스 설계</span>
+          <span class="s-badge sb-biz">강사 준비</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">강사 기초</div>
+              <div class="sb-col-item">BBFAS 이론 교수 언어 개발</div>
+              <div class="sb-col-item">오개념·질문 유형 예측 대응</div>
+              <div class="sb-col-item">미니 강의 실습 5분</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">비즈니스</div>
+              <div class="sb-col-item">4가지 수익 모델 설계</div>
+              <div class="sb-col-item">요금 설정·SNS 포트폴리오</div>
+              <div class="sb-col-item">재구매 유도 전략</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sess" onclick="toggle(this)">
+        <div class="sess-head">
+          <span class="s-num">20</span><span class="s-dot" style="background:#BA7517"></span>
+          <span class="s-title">최종 발표 & 수료 평가</span>
+          <span class="s-badge sb-biz">평가</span>
+          <span class="s-arrow ti-chevron-down"></span>
+        </div>
+        <div class="sess-body">
+          <div class="sb-row">
+            <div class="sb-col"><div class="sb-col-title">평가 구성</div>
+              <div class="sb-col-item">이론 필기 20점 (서술형 5문항)</div>
+              <div class="sb-col-item">실기 진단 40점 (미지 클라이언트)</div>
+              <div class="sb-col-item">케이스 보고서 30점 (2인)</div>
+              <div class="sb-col-item">동료 평가 10점</div>
+            </div>
+            <div class="sb-col"><div class="sb-col-title">수료 조건</div>
+              <div class="sb-col-item">출석 80% 이상 (16/20)</div>
+              <div class="sb-col-item">총점 70점 이상</div>
+              <div class="sb-col-item">실기 60점 이상 (24/40)</div>
+              <div class="sb-col-item">보고서 2건 전원 제출</div>
+            </div>
+          </div>
+          <div class="sb-note sb-note-a">수료 후 → BBFAS 공인 심화 컨설턴트 + Instructor 과정 입과 자격 자동 부여</div>
+        </div>
+      </div>
+
+    </div><!-- /part3 -->
+  </div><!-- /마스터과정 -->
+
+</div><!-- /main -->
+
+<script>
+function switchCourse(c) {
+  var b1 = document.getElementById('btn1');
+  var b2 = document.getElementById('btn2');
+  var s1 = document.getElementById('sec-basic');
+  var s2 = document.getElementById('sec-master');
+  var dot = document.getElementById('logoDot');
+  var sub = document.getElementById('logoSub');
+  if (c === 'basic') {
+    b1.className = 'sw-btn active-basic';
+    b2.className = 'sw-btn';
+    s1.classList.add('active');
+    s2.classList.remove('active');
+    dot.style.background = '#1D9E75';
+    sub.textContent = '전문가과정 · 골격진단 전문가 · 등록민간자격';
+  } else {
+    b2.className = 'sw-btn active-master';
+    b1.className = 'sw-btn';
+    s2.classList.add('active');
+    s1.classList.remove('active');
+    dot.style.background = '#534AB7';
+    sub.textContent = '마스터(심화)과정 · BBFAS Advanced Consultant';
+  }
+}
+function toggle(el) {
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>
